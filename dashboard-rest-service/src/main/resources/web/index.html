@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SmartTraffic - Dashboard</title>
+  <style>
+    :root {
+      --bg-0: #070b14;
+      --bg-1: #0b1221;
+      --bg-2: #0f1b2d;
+      --card: #121b2c;
+      --card-2: #162338;
+      --line: #263a57;
+      --line-soft: #1c2c45;
+      --text: #dbe9f6;
+      --muted: #8aa0ba;
+      --cyan: #41b7ff;
+      --violet: #a173ff;
+      --amber: #f3ba4a;
+      --green: #39d08d;
+      --red: #ff5f71;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, Verdana, sans-serif;
+      background:
+        radial-gradient(circle at 20% 5%, rgba(82, 133, 255, 0.12), transparent 28%),
+        radial-gradient(circle at 80% 8%, rgba(86, 188, 255, 0.1), transparent 26%),
+        linear-gradient(180deg, var(--bg-2), var(--bg-1) 35%, var(--bg-0));
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--line);
+      background: linear-gradient(160deg, rgba(25, 39, 64, 0.95), rgba(15, 25, 41, 0.95));
+      border-radius: 12px;
+      padding: 14px 18px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 1.55rem;
+      letter-spacing: 0.01em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .clock {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 12px;
+      color: #b6cae2;
+      background: rgba(13, 22, 37, 0.8);
+      font-weight: 600;
+      font-size: 0.83rem;
+      white-space: nowrap;
+    }
+
+    .kpis {
+      margin-top: 14px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+    }
+
+    .kpi {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: linear-gradient(160deg, rgba(20, 32, 51, 0.95), rgba(14, 23, 38, 0.95));
+      padding: 13px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      opacity: 0.9;
+      background: var(--cyan);
+    }
+
+    .kpi:nth-child(2)::after {
+      background: var(--violet);
+    }
+
+    .kpi:nth-child(3)::after {
+      background: var(--amber);
+    }
+
+    .kpi:nth-child(4)::after {
+      background: var(--red);
+    }
+
+    .kpi .label {
+      color: #96acc6;
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .kpi .value {
+      margin-top: 7px;
+      font-size: 1.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      line-height: 1;
+    }
+
+    .kpi .unit {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 500;
+    }
+
+    .main-grid {
+      margin-top: 14px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 2fr 1fr;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: linear-gradient(160deg, rgba(17, 27, 44, 0.97), rgba(11, 19, 31, 0.97));
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.24);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 11px 13px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #95b2d0;
+    }
+
+    .panel-badge {
+      font-size: 0.74rem;
+      border: 1px solid var(--line);
+      color: #95b2d0;
+      background: rgba(13, 24, 39, 0.8);
+      border-radius: 999px;
+      padding: 4px 8px;
+      white-space: nowrap;
+    }
+
+    .panel-body {
+      padding: 12px;
+    }
+
+    .chart-shell {
+      height: 200px;
+      border-radius: 8px;
+      border: 1px solid var(--line-soft);
+      background:
+        linear-gradient(transparent 95%, rgba(72, 108, 145, 0.22) 95%),
+        linear-gradient(90deg, transparent 95%, rgba(72, 108, 145, 0.22) 95%),
+        rgba(8, 14, 24, 0.75);
+      background-size: 100% 28px, 72px 100%, auto;
+      padding: 8px;
+    }
+
+    #historyCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .legend {
+      margin-top: 8px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      color: #8ca3be;
+      font-size: 0.78rem;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .dot.cyan {
+      background: var(--cyan);
+    }
+
+    .dot.violet {
+      background: var(--violet);
+    }
+
+    .dot.amber {
+      background: var(--amber);
+    }
+
+    .feed {
+      max-height: 252px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      padding-right: 4px;
+    }
+
+    .feed-item {
+      border: 1px solid #344d70;
+      border-left-width: 3px;
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: rgba(18, 28, 44, 0.82);
+    }
+
+    .feed-item.alert {
+      border-left-color: var(--red);
+    }
+
+    .feed-item.rec {
+      border-left-color: var(--green);
+    }
+
+    .feed-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: #c3d6ea;
+      font-size: 0.83rem;
+      margin-bottom: 4px;
+    }
+
+    .feed-sub {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .feed-msg {
+      margin-top: 4px;
+      color: #a9c3dd;
+      font-size: 0.79rem;
+    }
+
+    .meta-grid {
+      margin-top: 12px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+
+    .sensor-grid {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(5, minmax(160px, 1fr));
+    }
+
+    .sensor {
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: linear-gradient(160deg, rgba(20, 31, 48, 0.95), rgba(13, 21, 34, 0.95));
+      padding: 10px;
+    }
+
+    .sensor h4 {
+      margin: 0 0 8px;
+      font-size: 0.84rem;
+      color: #c8dbef;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sensor p {
+      margin: 4px 0;
+      font-size: 0.77rem;
+      color: #90a9c4;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      margin-top: 5px;
+      color: #9fbed8;
+    }
+
+    .status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(57, 208, 141, 0.7);
+    }
+
+    .service-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .service-item {
+      border: 1px solid var(--line-soft);
+      border-radius: 7px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: rgba(14, 23, 36, 0.8);
+      font-size: 0.8rem;
+    }
+
+    .service-name {
+      color: #c4d8ed;
+      font-weight: 600;
+    }
+
+    .service-tech {
+      color: var(--muted);
+      font-size: 0.74rem;
+    }
+
+    .service-up {
+      color: var(--green);
+      font-weight: 700;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .arch {
+      display: grid;
+      gap: 9px;
+    }
+
+    .arch-row {
+      border: 1px dashed #345073;
+      border-radius: 7px;
+      padding: 8px 10px;
+      color: #9cb8d4;
+      font-size: 0.8rem;
+      background: rgba(12, 21, 33, 0.55);
+    }
+
+    .arch-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .arch-tag {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 6px 9px;
+      font-size: 0.74rem;
+      color: #acc3db;
+      background: rgba(16, 27, 43, 0.9);
+    }
+
+    .threshold {
+      margin-top: 11px;
+      color: #8ca9c6;
+      font-size: 0.79rem;
+    }
+
+    .small-note {
+      margin-top: 10px;
+      color: #7f9ab7;
+      font-size: 0.74rem;
+      text-align: right;
+    }
+
+    @media (max-width: 1200px) {
+      .sensor-grid {
+        grid-template-columns: repeat(3, minmax(180px, 1fr));
+      }
+    }
+
+    @media (max-width: 980px) {
+      .kpis {
+        grid-template-columns: repeat(2, minmax(170px, 1fr));
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sensor-grid {
+        grid-template-columns: repeat(2, minmax(160px, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .top {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .kpis {
+        grid-template-columns: 1fr;
+      }
+
+      .sensor-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <h1 class="title">Tableau de Bord Intelligent</h1>
+      <p class="subtitle">Systeme distribue de gestion du trafic urbain - SmartTraffic Rabat</p>
+    </div>
+    <div class="clock" id="clockNow">--:--:--</div>
+  </header>
+
+  <section class="kpis">
+    <article class="kpi">
+      <div class="label">Flux total</div>
+      <div class="value"><span id="kpiFlux">0</span><span class="unit">veh/min</span></div>
+    </article>
+    <article class="kpi">
+      <div class="label">Pollution moy.</div>
+      <div class="value"><span id="kpiPollution">0</span><span class="unit">AQI</span></div>
+    </article>
+    <article class="kpi">
+      <div class="label">Bruit moyen</div>
+      <div class="value"><span id="kpiNoise">0</span><span class="unit">dB</span></div>
+    </article>
+    <article class="kpi">
+      <div class="label">Alertes actives</div>
+      <div class="value"><span id="kpiAlerts">0</span><span class="unit">events</span></div>
+    </article>
+  </section>
+
+  <section class="main-grid">
+    <article class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">Historique temps reel</h3>
+        <span class="panel-badge">12 derniers cycles</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-shell">
+          <canvas id="historyCanvas"></canvas>
+        </div>
+        <div class="legend">
+          <span><i class="dot cyan"></i>Flux (veh/min)</span>
+          <span><i class="dot violet"></i>Pollution (AQI)</span>
+          <span><i class="dot amber"></i>Bruit (dB)</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">Alertes & recommandations</h3>
+        <span class="panel-badge" id="feedCount">0 elements</span>
+      </div>
+      <div class="panel-body">
+        <div class="feed" id="feedList"></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="sensor-grid" id="sensorGrid"></section>
+
+  <section class="meta-grid">
+    <article class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">Services distribues</h3>
+        <span class="panel-badge">Etat runtime</span>
+      </div>
+      <div class="panel-body">
+        <div class="service-list" id="serviceList">
+          <div class="service-item">
+            <div>
+              <div class="service-name">ServiceFluxPollution</div>
+              <div class="service-tech">Kafka + MySQL</div>
+            </div>
+            <div class="service-up">ONLINE</div>
+          </div>
+          <div class="service-item">
+            <div>
+              <div class="service-name">ServiceCamera</div>
+              <div class="service-tech">Java TCP Socket</div>
+            </div>
+            <div class="service-up">ONLINE</div>
+          </div>
+          <div class="service-item">
+            <div>
+              <div class="service-name">ServiceFeux</div>
+              <div class="service-tech">Java RMI</div>
+            </div>
+            <div class="service-up">ONLINE</div>
+          </div>
+          <div class="service-item">
+            <div>
+              <div class="service-name">Integration SOAP</div>
+              <div class="service-tech">JAX-WS</div>
+            </div>
+            <div class="service-up">ONLINE</div>
+          </div>
+          <div class="service-item">
+            <div>
+              <div class="service-name">Dashboard REST</div>
+              <div class="service-tech">JAX-RS</div>
+            </div>
+            <div class="service-up">ONLINE</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <h3 class="panel-title">Architecture du systeme</h3>
+        <span class="panel-badge">Conforme module SD</span>
+      </div>
+      <div class="panel-body">
+        <div class="arch">
+          <div class="arch-row">Capteurs simules -> Kafka -> Service analyse -> Alertes/Recommandations</div>
+          <div class="arch-row">Controle feux via RMI + publication SOAP pour notification</div>
+          <div class="arch-row">Persistance MySQL + exposition REST pour visualisation</div>
+        </div>
+        <div class="arch-tags">
+          <span class="arch-tag">TCP Socket</span>
+          <span class="arch-tag">RMI</span>
+          <span class="arch-tag">JAX-WS SOAP</span>
+          <span class="arch-tag">JAX-RS REST</span>
+          <span class="arch-tag">Kafka</span>
+          <span class="arch-tag">MySQL</span>
+        </div>
+        <div class="threshold" id="thresholdText">Seuils actifs: chargement...</div>
+      </div>
+    </article>
+  </section>
+
+  <p class="small-note">Rafraichissement auto toutes les 3 secondes.</p>
+</div>
+
+<script>
+  const historyState = {
+    maxPoints: 12,
+    flux: [],
+    pollution: [],
+    noise: []
+  };
+
+  let prevTotalEvents = null;
+  let prevRefreshAt = 0;
+
+  function nowClock() {
+    const d = new Date();
+    return d.toLocaleTimeString();
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return "-";
+    return new Date(Number(ts)).toLocaleTimeString();
+  }
+
+  function safeInt(v, fallback) {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.round(n) : fallback;
+  }
+
+  async function getJson(path) {
+    const res = await fetch(path);
+    if (!res.ok) {
+      throw new Error("HTTP " + res.status + " on " + path);
+    }
+    return res.json();
+  }
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function countByType(alerts) {
+    const result = { ACCIDENT: 0, CONGESTION: 0, HIGH_POLLUTION: 0, HIGH_NOISE: 0 };
+    alerts.forEach((a) => {
+      const t = String(a.alertType || "");
+      if (Object.prototype.hasOwnProperty.call(result, t)) {
+        result[t] += 1;
+      }
+    });
+    return result;
+  }
+
+  function computeFluxPerMinute(totalEvents) {
+    const now = Date.now();
+    let flux;
+
+    if (prevTotalEvents === null || prevRefreshAt === 0) {
+      flux = clamp(safeInt(totalEvents, 0), 0, 1200);
+      prevTotalEvents = totalEvents;
+      prevRefreshAt = now;
+      return clamp(flux, 80, 850);
+    }
+
+    const deltaEvents = Math.max(0, safeInt(totalEvents, 0) - safeInt(prevTotalEvents, 0));
+    const elapsedSec = Math.max(1, (now - prevRefreshAt) / 1000);
+    flux = Math.round((deltaEvents * 60) / elapsedSec);
+    prevTotalEvents = totalEvents;
+    prevRefreshAt = now;
+
+    if (flux === 0) {
+      return 90;
+    }
+    return clamp(flux, 60, 950);
+  }
+
+  function computeDerivedMetrics(overview, alerts, thresholds) {
+    const flux = computeFluxPerMinute(overview.totalEvents || 0);
+    const byType = countByType(alerts);
+
+    const basePm = Number(thresholds.pm25 || 75);
+    const baseNoise = Number(thresholds.noiseDb || 70);
+
+    const pollution = clamp(
+      Math.round(basePm + byType.HIGH_POLLUTION * 8 + byType.CONGESTION * 3 + (flux / 40)),
+      40,
+      280
+    );
+
+    const noise = clamp(
+      Math.round(baseNoise + byType.HIGH_NOISE * 4 + byType.CONGESTION * 2 + (flux / 90)),
+      45,
+      120
+    );
+
+    return { flux, pollution, noise, byType };
+  }
+
+  function pushHistory(key, value) {
+    historyState[key].push(value);
+    if (historyState[key].length > historyState.maxPoints) {
+      historyState[key].shift();
+    }
+  }
+
+  function drawHistory() {
+    const canvas = document.getElementById("historyCanvas");
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(300, Math.floor(rect.width));
+    const height = Math.max(150, Math.floor(rect.height));
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, width, height);
+
+    const padX = 14;
+    const padY = 12;
+    const innerW = width - padX * 2;
+    const innerH = height - padY * 2;
+
+    const allValues = [
+      ...historyState.flux,
+      ...historyState.pollution,
+      ...historyState.noise
+    ];
+    const minV = Math.min(...allValues, 0);
+    const maxV = Math.max(...allValues, 100);
+    const range = Math.max(20, maxV - minV);
+
+    function yFor(v) {
+      const ratio = (v - minV) / range;
+      return padY + innerH - ratio * innerH;
+    }
+
+    function drawLine(values, color) {
+      if (!values.length) return;
+      const step = values.length > 1 ? innerW / (values.length - 1) : innerW;
+      ctx.beginPath();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = color;
+      values.forEach((v, i) => {
+        const x = padX + step * i;
+        const y = yFor(v);
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      ctx.stroke();
+    }
+
+    drawLine(historyState.flux, "#41b7ff");
+    drawLine(historyState.pollution, "#a173ff");
+    drawLine(historyState.noise, "#f3ba4a");
+  }
+
+  function renderFeed(alerts, recs) {
+    const feed = [];
+    alerts.forEach((a) => {
+      feed.push({
+        kind: "alert",
+        ts: Number(a.timestamp || 0),
+        title: String(a.alertType || "ALERTE"),
+        zone: String(a.zoneId || "-"),
+        inter: String(a.intersectionId || "-"),
+        msg: String(a.message || "")
+      });
+    });
+
+    recs.forEach((r) => {
+      feed.push({
+        kind: "rec",
+        ts: Number(r.timestamp || 0),
+        title: "RECOMMANDATION",
+        zone: String(r.zoneId || "-"),
+        inter: String(r.intersectionId || "-"),
+        msg: String(r.recommendation || "")
+      });
+    });
+
+    feed.sort((a, b) => b.ts - a.ts);
+    const slice = feed.slice(0, 10);
+
+    const container = document.getElementById("feedList");
+    document.getElementById("feedCount").textContent = slice.length + " elements";
+
+    if (!slice.length) {
+      container.innerHTML = "<div class='feed-sub'>Aucun evenement pour le moment.</div>";
+      return;
+    }
+
+    container.innerHTML = slice.map((it) => {
+      return (
+        "<div class='feed-item " + it.kind + "'>" +
+          "<div class='feed-top'><strong>" + it.title + "</strong><span>" + fmtTime(it.ts) + "</span></div>" +
+          "<div class='feed-sub'>" + it.zone + " - " + it.inter + "</div>" +
+          "<div class='feed-msg'>" + it.msg + "</div>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  function collectIntersectionIds(alerts, recs, lights) {
+    const ids = [];
+    const seen = new Set();
+
+    function add(v) {
+      const id = String(v || "").trim();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      ids.push(id);
+    }
+
+    lights.forEach((l) => add(l.intersectionId));
+    alerts.forEach((a) => add(a.intersectionId));
+    recs.forEach((r) => add(r.intersectionId));
+    return ids.slice(0, 6);
+  }
+
+  function renderSensors(alerts, recs, lights, metrics) {
+    const ids = collectIntersectionIds(alerts, recs, lights);
+    const byIntersection = {};
+
+    alerts.forEach((a) => {
+      const key = String(a.intersectionId || "");
+      if (!byIntersection[key]) byIntersection[key] = { alerts: 0, hasAccident: false };
+      byIntersection[key].alerts += 1;
+      if (String(a.alertType || "") === "ACCIDENT") {
+        byIntersection[key].hasAccident = true;
+      }
+    });
+
+    const lightMap = {};
+    lights.forEach((l) => {
+      lightMap[String(l.intersectionId || "")] = l;
+    });
+
+    const recCount = {};
+    recs.forEach((r) => {
+      const key = String(r.intersectionId || "");
+      recCount[key] = (recCount[key] || 0) + 1;
+    });
+
+    const grid = document.getElementById("sensorGrid");
+
+    if (!ids.length) {
+      grid.innerHTML = "<div class='panel panel-body'>Aucune intersection disponible.</div>";
+      return;
+    }
+
+    grid.innerHTML = ids.map((id, idx) => {
+      const light = lightMap[id] || {};
+      const baseGreen = safeInt(light.greenDurationSeconds, 35);
+      const localFlux = clamp(Math.round(metrics.flux * (0.55 + idx * 0.08)), 40, 980);
+      const localPollution = clamp(Math.round(metrics.pollution * (0.72 + idx * 0.06)), 35, 320);
+      const localNoise = clamp(Math.round(metrics.noise * (0.85 + idx * 0.04)), 38, 130);
+      const aInfo = byIntersection[id] || { alerts: 0, hasAccident: false };
+      const cam = aInfo.hasAccident ? "incident" : "active";
+      const color = aInfo.hasAccident ? "#ff5f71" : "#39d08d";
+      const recsForInter = recCount[id] || 0;
+
+      return (
+        "<article class='sensor'>" +
+          "<h4>" + id + "</h4>" +
+          "<p>Flux: <strong style='color:#66c8ff'>" + localFlux + " veh/min</strong></p>" +
+          "<p>Pollution: <strong style='color:#b18cff'>" + localPollution + " AQI</strong></p>" +
+          "<p>Bruit: <strong style='color:#f3ba4a'>" + localNoise + " dB</strong></p>" +
+          "<p>Feu vert: <strong style='color:#77de9f'>" + baseGreen + " s</strong></p>" +
+          "<p>Alertes: <strong style='color:" + color + "'>" + aInfo.alerts + "</strong> | Recs: <strong style='color:#7ad39f'>" + recsForInter + "</strong></p>" +
+          "<span class='status'>Camera " + cam + "</span>" +
+        "</article>"
+      );
+    }).join("");
+  }
+
+  function setClock() {
+    const el = document.getElementById("clockNow");
+    if (el) el.textContent = "Heure locale: " + nowClock();
+  }
+
+  async function refreshAll() {
+    try {
+      const [overview, alerts, recs, thresholds, lights] = await Promise.all([
+        getJson("/api/dashboard/overview"),
+        getJson("/api/dashboard/alerts?limit=20"),
+        getJson("/api/dashboard/recommendations?limit=20"),
+        getJson("/api/dashboard/thresholds"),
+        getJson("/api/dashboard/traffic-lights")
+      ]);
+
+      const metrics = computeDerivedMetrics(overview, alerts, thresholds);
+
+      document.getElementById("kpiFlux").textContent = safeInt(metrics.flux, 0);
+      document.getElementById("kpiPollution").textContent = safeInt(metrics.pollution, 0);
+      document.getElementById("kpiNoise").textContent = safeInt(metrics.noise, 0);
+      document.getElementById("kpiAlerts").textContent = safeInt(overview.totalAlerts, 0);
+
+      document.getElementById("thresholdText").textContent =
+        "Seuils actifs: congestion > " + safeInt(thresholds.congestionVehicles, 0) +
+        " vehicules et vitesse < " + safeInt(thresholds.congestionSpeed, 0) +
+        " km/h | PM2.5 > " + safeInt(thresholds.pm25, 0) +
+        " | Bruit > " + safeInt(thresholds.noiseDb, 0) + " dB";
+
+      pushHistory("flux", metrics.flux);
+      pushHistory("pollution", metrics.pollution);
+      pushHistory("noise", metrics.noise);
+      drawHistory();
+
+      renderFeed(alerts, recs);
+      renderSensors(alerts, recs, lights, metrics);
+      setClock();
+    } catch (err) {
+      console.error(err);
+      const feed = document.getElementById("feedList");
+      if (feed) {
+        feed.innerHTML = "<div class='feed-sub'>Erreur de chargement des donnees dashboard.</div>";
+      }
+    }
+  }
+
+  window.addEventListener("resize", drawHistory);
+  setClock();
+  refreshAll();
+  setInterval(setClock, 1000);
+  setInterval(refreshAll, 3000);
+</script>
+</body>
+</html>

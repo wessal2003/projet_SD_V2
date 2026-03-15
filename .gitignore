@@ -1,0 +1,6 @@
+/target/
+**/target/
+/.analysis_pdf/
+/.tmp/
+/.tmp2/
+/.tp5_hello_extracted/
