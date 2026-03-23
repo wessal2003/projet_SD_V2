@@ -1,0 +1,17 @@
+# Copy to smarttraffic.properties and adjust values for your machine.
+kafka.bootstrap=localhost:9092
+mysql.url=jdbc:mysql://localhost:3306/smart_traffic?serverTimezone=UTC
+mysql.user=root
+mysql.password=
+collector.host=localhost
+collector.port=7070
+traffic.ws.endpoint=http://localhost:8085/ws/ServiceFluxVehicules
+pollution.rest.base=http://localhost:8082/
+camera.rmi.host=localhost
+camera.rmi.port=1099
+camera.rmi.service=ServiceCamera
+noise.service.host=localhost
+noise.service.port=7071
+traffic.light.jaxrpc.endpoint=http://localhost:8084/services/ServiceFeuxSignalisation
+rest.base=http://localhost:8080/
+operations.base=http://localhost:8081/

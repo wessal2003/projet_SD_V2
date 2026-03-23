@@ -4,3 +4,8 @@
 /.tmp/
 /.tmp2/
 /.tp5_hello_extracted/
+smarttraffic.properties
+.env
+.env.properties
+*.log
+.run/

@@ -9,14 +9,29 @@
     <version>1.0.0</version>
   </parent>
 
-  <artifactId>traffic-light-rmi-service</artifactId>
-  <name>traffic-light-rmi-service</name>
+  <artifactId>traffic-light-jaxrpc-service</artifactId>
+  <name>traffic-light-jaxrpc-service</name>
 
   <dependencies>
     <dependency>
       <groupId>com.smartcity</groupId>
       <artifactId>common-model</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>axis</groupId>
+      <artifactId>axis</artifactId>
+      <version>1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.axis</groupId>
+      <artifactId>axis-jaxrpc</artifactId>
+      <version>1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.axis</groupId>
+      <artifactId>axis-saaj</artifactId>
+      <version>1.4</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

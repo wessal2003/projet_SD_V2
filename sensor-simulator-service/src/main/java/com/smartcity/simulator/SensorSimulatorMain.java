@@ -19,20 +19,22 @@ import java.util.concurrent.Executors;
 
 public class SensorSimulatorMain {
     private static final Logger LOG = LoggerFactory.getLogger(SensorSimulatorMain.class);
+    private static final String DEFAULT_PROFILE = "realistic";
 
     public static void main(String[] args) {
         String collectorHost = AppConfig.collectorHost();
         int collectorPort = AppConfig.collectorPort();
         String zoneId = System.getProperty("zone.id", "zone-centre-ville");
+        String profile = System.getProperty("simulator.profile", DEFAULT_PROFILE);
         List<String> intersections = List.of("I-101", "I-102", "I-103", "I-104");
 
-        LOG.info("Starting sensor simulator -> {}:{}", collectorHost, collectorPort);
+        LOG.info("Starting sensor simulator -> {}:{} profile={}", collectorHost, collectorPort, profile);
         ExecutorService executor = Executors.newFixedThreadPool(4);
 
-        executor.submit(new SensorWorker(collectorHost, collectorPort, zoneId, intersections, SensorType.TRAFFIC_FLOW, 1200));
-        executor.submit(new SensorWorker(collectorHost, collectorPort, zoneId, intersections, SensorType.POLLUTION, 1800));
-        executor.submit(new SensorWorker(collectorHost, collectorPort, zoneId, intersections, SensorType.NOISE, 1500));
-        executor.submit(new SensorWorker(collectorHost, collectorPort, zoneId, intersections, SensorType.ACCIDENT_CAMERA, 2200));
+        executor.submit(new SensorWorker(collectorHost, collectorPort, zoneId, intersections, SensorType.TRAFFIC_FLOW, 1200, profile));
+        executor.submit(new SensorWorker(collectorHost, collectorPort, zoneId, intersections, SensorType.POLLUTION, 1800, profile));
+        executor.submit(new SensorWorker(collectorHost, collectorPort, zoneId, intersections, SensorType.NOISE, 1500, profile));
+        executor.submit(new SensorWorker(collectorHost, collectorPort, zoneId, intersections, SensorType.ACCIDENT_CAMERA, 2200, profile));
     }
 
     private static class SensorWorker implements Runnable {
@@ -42,16 +44,19 @@ public class SensorSimulatorMain {
         private final List<String> intersections;
         private final SensorType sensorType;
         private final long sleepMs;
+        private final String profile;
         private final Random random = new Random();
         private int index;
 
-        private SensorWorker(String host, int port, String zoneId, List<String> intersections, SensorType sensorType, long sleepMs) {
+        private SensorWorker(String host, int port, String zoneId, List<String> intersections, SensorType sensorType,
+                             long sleepMs, String profile) {
             this.host = host;
             this.port = port;
             this.zoneId = zoneId;
             this.intersections = intersections;
             this.sensorType = sensorType;
             this.sleepMs = sleepMs;
+            this.profile = profile;
         }
 
         @Override
@@ -64,6 +69,8 @@ public class SensorSimulatorMain {
                          PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true)) {
                         writer.println(payload);
                     }
+                    LOG.info("TCP_SEND sensor={} intersection={} profile={}",
+                            sensorType, event.getIntersectionId(), profile);
                 } catch (Exception ex) {
                     LOG.warn("Failed to send {} event: {}", sensorType, ex.getMessage());
                 }
@@ -87,24 +94,34 @@ public class SensorSimulatorMain {
             switch (sensorType) {
                 case TRAFFIC_FLOW -> {
                     int peakBonus = isPeakHour() ? 35 : 0;
-                    int vehicleCount = 25 + peakBonus + random.nextInt(95);
+                    int profileBonus = isDemoProfile() ? 25 : 0;
+                    int vehicleCount = 25 + peakBonus + profileBonus + random.nextInt(95);
                     double speed = Math.max(8.0, 70.0 - (vehicleCount * 0.45) + random.nextDouble(8));
                     event.setVehicleCount(vehicleCount);
                     event.setAverageSpeedKmh(round(speed));
                 }
                 case POLLUTION -> {
-                    double pm25 = 22 + random.nextDouble(95);
+                    double pm25 = (isDemoProfile() ? 45 : 22) + random.nextDouble(isDemoProfile() ? 110 : 95);
                     event.setPm25(round(pm25));
                 }
                 case NOISE -> {
-                    double noise = 48 + random.nextDouble(48);
+                    double noise = (isDemoProfile() ? 60 : 48) + random.nextDouble(isDemoProfile() ? 42 : 48);
                     event.setNoiseDb(round(noise));
                 }
                 case ACCIDENT_CAMERA -> {
-                    event.setAccidentDetected(random.nextDouble() < 0.03);
+                    double accidentProbability = switch (profile.toLowerCase()) {
+                        case "demo", "accident-demo" -> 0.18;
+                        case "stress" -> 0.12;
+                        default -> 0.03;
+                    };
+                    event.setAccidentDetected(random.nextDouble() < accidentProbability);
                 }
             }
             return event;
+        }
+
+        private boolean isDemoProfile() {
+            return "demo".equalsIgnoreCase(profile) || "stress".equalsIgnoreCase(profile);
         }
 
         private boolean isPeakHour() {

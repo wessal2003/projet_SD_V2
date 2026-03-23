@@ -44,6 +44,33 @@ CREATE TABLE IF NOT EXISTS recommendations (
 CREATE TABLE IF NOT EXISTS traffic_light_state (
     intersection_id VARCHAR(64) PRIMARY KEY,
     green_duration_seconds INT NOT NULL,
+    road_blocked BOOLEAN NOT NULL DEFAULT FALSE,
+    status_label VARCHAR(32) NOT NULL DEFAULT 'GREEN',
     updated_at TIMESTAMP NOT NULL,
     INDEX idx_light_updated (updated_at)
+);
+
+CREATE TABLE IF NOT EXISTS soap_notifications (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    alert_type VARCHAR(32) NOT NULL,
+    zone_id VARCHAR(64) NOT NULL,
+    message VARCHAR(500) NOT NULL,
+    transport VARCHAR(32) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    INDEX idx_soap_created (created_at),
+    INDEX idx_soap_alert_type (alert_type)
+);
+
+CREATE TABLE IF NOT EXISTS executed_actions (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    action_name VARCHAR(64) NOT NULL,
+    zone_id VARCHAR(64) NOT NULL,
+    intersection_id VARCHAR(64) NOT NULL,
+    transport VARCHAR(32) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    details VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    INDEX idx_action_created (created_at),
+    INDEX idx_action_name (action_name)
 );

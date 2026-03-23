@@ -1,9 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SmartTraffic - Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <style>
     :root {
       --bg-0: #070b14;
@@ -20,11 +21,10 @@
       --amber: #f3ba4a;
       --green: #39d08d;
       --red: #ff5f71;
+      --orange: #ff944d;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -38,9 +38,26 @@
     }
 
     .page {
-      max-width: 1380px;
-      margin: 0 auto;
-      padding: 16px;
+      width: 100%;
+      margin: 0;
+      padding: 14px 18px 18px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(980px, 1.45fr) minmax(420px, 0.95fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .dashboard-pane {
+      min-width: 0;
+    }
+
+    .map-pane {
+      min-width: 0;
+      position: sticky;
+      top: 12px;
     }
 
     .top {
@@ -55,23 +72,9 @@
       box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
     }
 
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .title {
-      margin: 0;
-      font-size: 1.55rem;
-      letter-spacing: 0.01em;
-    }
-
-    .subtitle {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
+    .brand { display: flex; flex-direction: column; gap: 5px; }
+    .title { margin: 0; font-size: 1.55rem; letter-spacing: 0.01em; }
+    .subtitle { margin: 0; color: var(--muted); font-size: 0.9rem; }
 
     .clock {
       border: 1px solid var(--line);
@@ -103,25 +106,14 @@
     .kpi::after {
       content: "";
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       height: 3px;
       opacity: 0.9;
       background: var(--cyan);
     }
-
-    .kpi:nth-child(2)::after {
-      background: var(--violet);
-    }
-
-    .kpi:nth-child(3)::after {
-      background: var(--amber);
-    }
-
-    .kpi:nth-child(4)::after {
-      background: var(--red);
-    }
+    .kpi:nth-child(2)::after { background: var(--violet); }
+    .kpi:nth-child(3)::after { background: var(--amber); }
+    .kpi:nth-child(4)::after { background: var(--red); }
 
     .kpi .label {
       color: #96acc6;
@@ -140,21 +132,20 @@
       line-height: 1;
     }
 
-    .kpi .unit {
-      color: var(--muted);
-      font-size: 0.86rem;
-      font-weight: 500;
-    }
+    .kpi .unit { color: var(--muted); font-size: 0.86rem; font-weight: 500; }
 
-    .main-grid {
+    .main-grid, .extra-grid, .meta-grid {
       margin-top: 14px;
       display: grid;
       gap: 12px;
-      grid-template-columns: 2fr 1fr;
       align-items: start;
     }
 
-    .panel {
+    .main-grid { grid-template-columns: 1.6fr 0.95fr; }
+    .extra-grid { grid-template-columns: 1fr 1fr 1fr; }
+    .meta-grid { grid-template-columns: 1fr 1fr; }
+
+    .panel, .map-card {
       border: 1px solid var(--line);
       border-radius: 10px;
       background: linear-gradient(160deg, rgba(17, 27, 44, 0.97), rgba(11, 19, 31, 0.97));
@@ -188,12 +179,10 @@
       white-space: nowrap;
     }
 
-    .panel-body {
-      padding: 12px;
-    }
+    .panel-body { padding: 12px; }
 
     .chart-shell {
-      height: 200px;
+      height: 240px;
       border-radius: 8px;
       border: 1px solid var(--line-soft);
       background:
@@ -204,11 +193,7 @@
       padding: 8px;
     }
 
-    #historyCanvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
+    #historyCanvas { width: 100%; height: 100%; display: block; }
 
     .legend {
       margin-top: 8px;
@@ -226,21 +211,12 @@
       display: inline-block;
       margin-right: 6px;
     }
+    .dot.cyan { background: var(--cyan); }
+    .dot.violet { background: var(--violet); }
+    .dot.amber { background: var(--amber); }
 
-    .dot.cyan {
-      background: var(--cyan);
-    }
-
-    .dot.violet {
-      background: var(--violet);
-    }
-
-    .dot.amber {
-      background: var(--amber);
-    }
-
-    .feed {
-      max-height: 252px;
+    .feed, .action-feed, .route-list {
+      max-height: 278px;
       overflow: auto;
       display: flex;
       flex-direction: column;
@@ -248,7 +224,7 @@
       padding-right: 4px;
     }
 
-    .feed-item {
+    .feed-item, .action-item, .route-item {
       border: 1px solid #344d70;
       border-left-width: 3px;
       border-radius: 8px;
@@ -256,15 +232,11 @@
       background: rgba(18, 28, 44, 0.82);
     }
 
-    .feed-item.alert {
-      border-left-color: var(--red);
-    }
+    .feed-item.alert, .route-item { border-left-color: var(--red); }
+    .feed-item.rec, .action-item.success { border-left-color: var(--green); }
+    .action-item.failed { border-left-color: var(--orange); }
 
-    .feed-item.rec {
-      border-left-color: var(--green);
-    }
-
-    .feed-top {
+    .feed-top, .route-top, .action-top {
       display: flex;
       justify-content: space-between;
       gap: 8px;
@@ -273,29 +245,22 @@
       margin-bottom: 4px;
     }
 
-    .feed-sub {
+    .feed-sub, .route-sub, .action-sub {
       color: var(--muted);
       font-size: 0.78rem;
     }
 
-    .feed-msg {
+    .feed-msg, .route-msg, .action-msg {
       margin-top: 4px;
       color: #a9c3dd;
       font-size: 0.79rem;
-    }
-
-    .meta-grid {
-      margin-top: 12px;
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(2, minmax(220px, 1fr));
     }
 
     .sensor-grid {
       margin-top: 12px;
       display: grid;
       gap: 10px;
-      grid-template-columns: repeat(5, minmax(160px, 1fr));
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
     }
 
     .sensor {
@@ -305,20 +270,8 @@
       padding: 10px;
     }
 
-    .sensor h4 {
-      margin: 0 0 8px;
-      font-size: 0.84rem;
-      color: #c8dbef;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .sensor p {
-      margin: 4px 0;
-      font-size: 0.77rem;
-      color: #90a9c4;
-    }
+    .sensor h4 { margin: 0 0 8px; font-size: 0.84rem; color: #c8dbef; }
+    .sensor p { margin: 4px 0; font-size: 0.77rem; color: #90a9c4; }
 
     .status {
       display: inline-flex;
@@ -336,6 +289,11 @@
       border-radius: 50%;
       background: var(--green);
       box-shadow: 0 0 8px rgba(57, 208, 141, 0.7);
+    }
+
+    .status.blocked::before {
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(255, 95, 113, 0.7);
     }
 
     .service-list {
@@ -356,27 +314,11 @@
       font-size: 0.8rem;
     }
 
-    .service-name {
-      color: #c4d8ed;
-      font-weight: 600;
-    }
+    .service-name { color: #c4d8ed; font-weight: 600; }
+    .service-tech { color: var(--muted); font-size: 0.74rem; }
+    .service-up { color: var(--green); font-weight: 700; font-size: 0.75rem; white-space: nowrap; }
 
-    .service-tech {
-      color: var(--muted);
-      font-size: 0.74rem;
-    }
-
-    .service-up {
-      color: var(--green);
-      font-weight: 700;
-      font-size: 0.75rem;
-      white-space: nowrap;
-    }
-
-    .arch {
-      display: grid;
-      gap: 9px;
-    }
+    .arch { display: grid; gap: 9px; }
 
     .arch-row {
       border: 1px dashed #345073;
@@ -403,207 +345,275 @@
       background: rgba(16, 27, 43, 0.9);
     }
 
-    .threshold {
-      margin-top: 11px;
-      color: #8ca9c6;
-      font-size: 0.79rem;
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 10px;
     }
 
-    .small-note {
-      margin-top: 10px;
-      color: #7f9ab7;
-      font-size: 0.74rem;
-      text-align: right;
+    .stat-box {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: rgba(13, 23, 37, 0.75);
+      padding: 10px;
+    }
+
+    .stat-box .mini-label {
+      color: var(--muted);
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    .stat-box .mini-value {
+      margin-top: 6px;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .threshold { margin-top: 11px; color: #8ca9c6; font-size: 0.79rem; }
+    .small-note { margin-top: 10px; color: #7f9ab7; font-size: 0.74rem; text-align: right; }
+
+    .map-card { height: calc(100vh - 28px); min-height: 840px; display: flex; flex-direction: column; }
+    .map-card .panel-body { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+    #rabatMap {
+      flex: 1;
+      min-height: 620px;
+      border-radius: 10px;
+      border: 1px solid var(--line-soft);
+      overflow: hidden;
+      background: #09101a;
+    }
+
+    .map-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(100px, 1fr));
+      gap: 10px;
+    }
+
+    .map-kpi {
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      background: rgba(12, 21, 33, 0.7);
+      padding: 10px;
+    }
+
+    .map-kpi strong { display: block; font-size: 1rem; margin-top: 5px; }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #152238; color: #dbe9f6; }
+
+    .vehicle-dot, .accident-icon, .light-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #fff;
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,0.14);
+      box-shadow: 0 0 14px rgba(0,0,0,0.35);
+    }
+
+    .vehicle-dot { width: 18px; height: 18px; background: var(--cyan); }
+    .accident-icon { width: 24px; height: 24px; background: var(--red); }
+    .light-icon { width: 24px; height: 24px; }
+    .light-green { background: var(--green); }
+    .light-red { background: var(--red); }
+    .light-amber { background: var(--amber); color: #0f1828; }
+
+    @media (max-width: 1500px) {
+      .workspace { grid-template-columns: 1fr; }
+      .map-pane { position: static; }
+      .map-card { height: 720px; min-height: 720px; }
     }
 
     @media (max-width: 1200px) {
-      .sensor-grid {
-        grid-template-columns: repeat(3, minmax(180px, 1fr));
-      }
+      .sensor-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
+      .extra-grid, .meta-grid, .main-grid { grid-template-columns: 1fr; }
     }
 
-    @media (max-width: 980px) {
-      .kpis {
-        grid-template-columns: repeat(2, minmax(170px, 1fr));
-      }
-
-      .main-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .meta-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .sensor-grid {
-        grid-template-columns: repeat(2, minmax(160px, 1fr));
-      }
+    @media (max-width: 820px) {
+      .kpis { grid-template-columns: repeat(2, minmax(170px, 1fr)); }
+      .sensor-grid { grid-template-columns: 1fr; }
+      .map-meta, .stats-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 620px) {
-      .top {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .kpis {
-        grid-template-columns: 1fr;
-      }
-
-      .sensor-grid {
-        grid-template-columns: 1fr;
-      }
+      .page { padding: 10px; }
+      .top { flex-direction: column; align-items: flex-start; }
+      .kpis { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 <div class="page">
-  <header class="top">
-    <div class="brand">
-      <h1 class="title">Tableau de Bord Intelligent</h1>
-      <p class="subtitle">Systeme distribue de gestion du trafic urbain - SmartTraffic Rabat</p>
+  <div class="workspace">
+    <div class="dashboard-pane">
+      <header class="top">
+        <div class="brand">
+          <h1 class="title">Tableau de Bord Intelligent</h1>
+          <p class="subtitle">Systeme distribue de gestion du trafic urbain - SmartTraffic Rabat Centre-ville</p>
+        </div>
+        <div class="clock" id="clockNow">--:--:--</div>
+      </header>
+
+      <section class="kpis">
+        <article class="kpi">
+          <div class="label">Flux total</div>
+          <div class="value"><span id="kpiFlux">0</span><span class="unit">veh/min</span></div>
+        </article>
+        <article class="kpi">
+          <div class="label">Pollution moy.</div>
+          <div class="value"><span id="kpiPollution">0</span><span class="unit">AQI</span></div>
+        </article>
+        <article class="kpi">
+          <div class="label">Bruit moyen</div>
+          <div class="value"><span id="kpiNoise">0</span><span class="unit">dB</span></div>
+        </article>
+        <article class="kpi">
+          <div class="label">Alertes actives</div>
+          <div class="value"><span id="kpiAlerts">0</span><span class="unit">events</span></div>
+        </article>
+      </section>
+
+      <section class="main-grid">
+        <article class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">Historique temps reel</h3>
+            <span class="panel-badge">12 derniers cycles</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-shell">
+              <canvas id="historyCanvas"></canvas>
+            </div>
+            <div class="legend">
+              <span><i class="dot cyan"></i>Flux (veh/min)</span>
+              <span><i class="dot violet"></i>Pollution (AQI)</span>
+              <span><i class="dot amber"></i>Bruit (dB)</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">Alertes & recommandations</h3>
+            <span class="panel-badge" id="feedCount">0 elements</span>
+          </div>
+          <div class="panel-body">
+            <div class="feed" id="feedList"></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="sensor-grid" id="sensorGrid"></section>
+
+      <section class="extra-grid">
+        <article class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">Routes congestionnees</h3>
+            <span class="panel-badge" id="congestionCount">0 routes</span>
+          </div>
+          <div class="panel-body">
+            <div class="route-list" id="congestedRoutes"></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">Statistiques par zone</h3>
+            <span class="panel-badge">Centre-ville</span>
+          </div>
+          <div class="panel-body">
+            <div class="stats-grid" id="zoneStats"></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">Actions executees</h3>
+            <span class="panel-badge" id="actionsCount">0 actions</span>
+          </div>
+          <div class="panel-body">
+            <div class="action-feed" id="actionFeed"></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="meta-grid">
+        <article class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">Services distribues</h3>
+            <span class="panel-badge">Services metier + techniques</span>
+          </div>
+          <div class="panel-body">
+            <div class="service-list" id="serviceList">
+              <div class="service-item"><div><div class="service-name">Service Flux Vehicules</div><div class="service-tech">JAX-WS + Kafka + MySQL</div></div><div class="service-up">ONLINE</div></div>
+              <div class="service-item"><div><div class="service-name">Service Pollution</div><div class="service-tech">JAX-RS + Kafka + MySQL</div></div><div class="service-up">ONLINE</div></div>
+              <div class="service-item"><div><div class="service-name">Service Bruit</div><div class="service-tech">Socket TCP + Kafka + MySQL</div></div><div class="service-up">ONLINE</div></div>
+              <div class="service-item"><div><div class="service-name">Service Camera Accidents</div><div class="service-tech">JAVA RMI + Kafka + MySQL</div></div><div class="service-up">ONLINE</div></div>
+              <div class="service-item"><div><div class="service-name">Service Feux Signalisation</div><div class="service-tech">JAX-RPC + MySQL</div></div><div class="service-up">ONLINE</div></div>
+              <div class="service-item"><div><div class="service-name">Collecteur TCP</div><div class="service-tech">Sockets TCP + Kafka</div></div><div class="service-up">ONLINE</div></div>
+              <div class="service-item"><div><div class="service-name">Dashboard REST</div><div class="service-tech">JAX-RS</div></div><div class="service-up">ONLINE</div></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <h3 class="panel-title">Architecture du systeme</h3>
+            <span class="panel-badge">Conforme module SD</span>
+          </div>
+          <div class="panel-body">
+            <div class="arch">
+              <div class="arch-row">Capteurs simules -> Collecteur TCP -> Kafka -> ServiceFluxVehicules / ServicePollution / ServiceBruit / ServiceCamera</div>
+              <div class="arch-row">Chaque service enregistre ses mesures, cree ses alertes, genere ses recommandations et declenche ses actions reelles</div>
+              <div class="arch-row">ServiceFluxVehicules en JAX-WS, ServicePollution en JAX-RS, ServiceCamera en JAVA RMI, ServiceBruit en Socket TCP, ServiceFeuxSignalisation en JAX-RPC</div>
+            </div>
+            <div class="arch-tags">
+              <span class="arch-tag">TCP Socket</span>
+              <span class="arch-tag">RMI</span>
+              <span class="arch-tag">JAX-WS SOAP</span>
+              <span class="arch-tag">JAX-RPC</span>
+              <span class="arch-tag">JAX-RS REST</span>
+              <span class="arch-tag">Kafka</span>
+              <span class="arch-tag">MySQL</span>
+            </div>
+            <div class="threshold" id="thresholdText">Seuils actifs: chargement...</div>
+          </div>
+        </article>
+      </section>
+
+      <p class="small-note">Rafraichissement auto toutes les 3 secondes.</p>
     </div>
-    <div class="clock" id="clockNow">--:--:--</div>
-  </header>
 
-  <section class="kpis">
-    <article class="kpi">
-      <div class="label">Flux total</div>
-      <div class="value"><span id="kpiFlux">0</span><span class="unit">veh/min</span></div>
-    </article>
-    <article class="kpi">
-      <div class="label">Pollution moy.</div>
-      <div class="value"><span id="kpiPollution">0</span><span class="unit">AQI</span></div>
-    </article>
-    <article class="kpi">
-      <div class="label">Bruit moyen</div>
-      <div class="value"><span id="kpiNoise">0</span><span class="unit">dB</span></div>
-    </article>
-    <article class="kpi">
-      <div class="label">Alertes actives</div>
-      <div class="value"><span id="kpiAlerts">0</span><span class="unit">events</span></div>
-    </article>
-  </section>
-
-  <section class="main-grid">
-    <article class="panel">
-      <div class="panel-head">
-        <h3 class="panel-title">Historique temps reel</h3>
-        <span class="panel-badge">12 derniers cycles</span>
-      </div>
-      <div class="panel-body">
-        <div class="chart-shell">
-          <canvas id="historyCanvas"></canvas>
+    <aside class="map-pane">
+      <article class="map-card">
+        <div class="panel-head">
+          <h3 class="panel-title">Carte interactive de Rabat</h3>
+          <span class="panel-badge">OpenStreetMap + Leaflet</span>
         </div>
-        <div class="legend">
-          <span><i class="dot cyan"></i>Flux (veh/min)</span>
-          <span><i class="dot violet"></i>Pollution (AQI)</span>
-          <span><i class="dot amber"></i>Bruit (dB)</span>
+        <div class="panel-body">
+          <div class="map-meta">
+            <div class="map-kpi"><span class="mini-label">Vehicules</span><strong id="mapVehicleCount">0</strong></div>
+            <div class="map-kpi"><span class="mini-label">Feux</span><strong id="mapLightCount">0</strong></div>
+            <div class="map-kpi"><span class="mini-label">Accidents</span><strong id="mapAccidentCount">0</strong></div>
+          </div>
+          <div id="rabatMap"></div>
         </div>
-      </div>
-    </article>
-
-    <article class="panel">
-      <div class="panel-head">
-        <h3 class="panel-title">Alertes & recommandations</h3>
-        <span class="panel-badge" id="feedCount">0 elements</span>
-      </div>
-      <div class="panel-body">
-        <div class="feed" id="feedList"></div>
-      </div>
-    </article>
-  </section>
-
-  <section class="sensor-grid" id="sensorGrid"></section>
-
-  <section class="meta-grid">
-    <article class="panel">
-      <div class="panel-head">
-        <h3 class="panel-title">Services distribues</h3>
-        <span class="panel-badge">Etat runtime</span>
-      </div>
-      <div class="panel-body">
-        <div class="service-list" id="serviceList">
-          <div class="service-item">
-            <div>
-              <div class="service-name">ServiceFluxPollution</div>
-              <div class="service-tech">Kafka + MySQL</div>
-            </div>
-            <div class="service-up">ONLINE</div>
-          </div>
-          <div class="service-item">
-            <div>
-              <div class="service-name">ServiceCamera</div>
-              <div class="service-tech">Java TCP Socket</div>
-            </div>
-            <div class="service-up">ONLINE</div>
-          </div>
-          <div class="service-item">
-            <div>
-              <div class="service-name">ServiceFeux</div>
-              <div class="service-tech">Java RMI</div>
-            </div>
-            <div class="service-up">ONLINE</div>
-          </div>
-          <div class="service-item">
-            <div>
-              <div class="service-name">Integration SOAP</div>
-              <div class="service-tech">JAX-WS</div>
-            </div>
-            <div class="service-up">ONLINE</div>
-          </div>
-          <div class="service-item">
-            <div>
-              <div class="service-name">Dashboard REST</div>
-              <div class="service-tech">JAX-RS</div>
-            </div>
-            <div class="service-up">ONLINE</div>
-          </div>
-        </div>
-      </div>
-    </article>
-
-    <article class="panel">
-      <div class="panel-head">
-        <h3 class="panel-title">Architecture du systeme</h3>
-        <span class="panel-badge">Conforme module SD</span>
-      </div>
-      <div class="panel-body">
-        <div class="arch">
-          <div class="arch-row">Capteurs simules -> Kafka -> Service analyse -> Alertes/Recommandations</div>
-          <div class="arch-row">Controle feux via RMI + publication SOAP pour notification</div>
-          <div class="arch-row">Persistance MySQL + exposition REST pour visualisation</div>
-        </div>
-        <div class="arch-tags">
-          <span class="arch-tag">TCP Socket</span>
-          <span class="arch-tag">RMI</span>
-          <span class="arch-tag">JAX-WS SOAP</span>
-          <span class="arch-tag">JAX-RS REST</span>
-          <span class="arch-tag">Kafka</span>
-          <span class="arch-tag">MySQL</span>
-        </div>
-        <div class="threshold" id="thresholdText">Seuils actifs: chargement...</div>
-      </div>
-    </article>
-  </section>
-
-  <p class="small-note">Rafraichissement auto toutes les 3 secondes.</p>
+      </article>
+    </aside>
+  </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-  const historyState = {
-    maxPoints: 12,
-    flux: [],
-    pollution: [],
-    noise: []
-  };
-
-  let prevTotalEvents = null;
-  let prevRefreshAt = 0;
+  const historyState = { maxPoints: 12, flux: [], pollution: [], noise: [] };
+  let rabatMap = null;
+  let vehicleLayer = null;
+  let trafficLightLayer = null;
+  let accidentLayer = null;
 
   function nowClock() {
-    const d = new Date();
-    return d.toLocaleTimeString();
+    return new Date().toLocaleTimeString();
   }
 
   function fmtTime(ts) {
@@ -618,9 +628,7 @@
 
   async function getJson(path) {
     const res = await fetch(path);
-    if (!res.ok) {
-      throw new Error("HTTP " + res.status + " on " + path);
-    }
+    if (!res.ok) throw new Error("HTTP " + res.status + " on " + path);
     return res.json();
   }
 
@@ -628,67 +636,9 @@
     return Math.max(min, Math.min(max, v));
   }
 
-  function countByType(alerts) {
-    const result = { ACCIDENT: 0, CONGESTION: 0, HIGH_POLLUTION: 0, HIGH_NOISE: 0 };
-    alerts.forEach((a) => {
-      const t = String(a.alertType || "");
-      if (Object.prototype.hasOwnProperty.call(result, t)) {
-        result[t] += 1;
-      }
-    });
-    return result;
-  }
-
-  function computeFluxPerMinute(totalEvents) {
-    const now = Date.now();
-    let flux;
-
-    if (prevTotalEvents === null || prevRefreshAt === 0) {
-      flux = clamp(safeInt(totalEvents, 0), 0, 1200);
-      prevTotalEvents = totalEvents;
-      prevRefreshAt = now;
-      return clamp(flux, 80, 850);
-    }
-
-    const deltaEvents = Math.max(0, safeInt(totalEvents, 0) - safeInt(prevTotalEvents, 0));
-    const elapsedSec = Math.max(1, (now - prevRefreshAt) / 1000);
-    flux = Math.round((deltaEvents * 60) / elapsedSec);
-    prevTotalEvents = totalEvents;
-    prevRefreshAt = now;
-
-    if (flux === 0) {
-      return 90;
-    }
-    return clamp(flux, 60, 950);
-  }
-
-  function computeDerivedMetrics(overview, alerts, thresholds) {
-    const flux = computeFluxPerMinute(overview.totalEvents || 0);
-    const byType = countByType(alerts);
-
-    const basePm = Number(thresholds.pm25 || 75);
-    const baseNoise = Number(thresholds.noiseDb || 70);
-
-    const pollution = clamp(
-      Math.round(basePm + byType.HIGH_POLLUTION * 8 + byType.CONGESTION * 3 + (flux / 40)),
-      40,
-      280
-    );
-
-    const noise = clamp(
-      Math.round(baseNoise + byType.HIGH_NOISE * 4 + byType.CONGESTION * 2 + (flux / 90)),
-      45,
-      120
-    );
-
-    return { flux, pollution, noise, byType };
-  }
-
   function pushHistory(key, value) {
     historyState[key].push(value);
-    if (historyState[key].length > historyState.maxPoints) {
-      historyState[key].shift();
-    }
+    if (historyState[key].length > historyState.maxPoints) historyState[key].shift();
   }
 
   function drawHistory() {
@@ -707,12 +657,7 @@
     const padY = 12;
     const innerW = width - padX * 2;
     const innerH = height - padY * 2;
-
-    const allValues = [
-      ...historyState.flux,
-      ...historyState.pollution,
-      ...historyState.noise
-    ];
+    const allValues = [...historyState.flux, ...historyState.pollution, ...historyState.noise];
     const minV = Math.min(...allValues, 0);
     const maxV = Math.max(...allValues, 100);
     const range = Math.max(20, maxV - minV);
@@ -731,11 +676,7 @@
       values.forEach((v, i) => {
         const x = padX + step * i;
         const y = yFor(v);
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       });
       ctx.stroke();
     }
@@ -747,121 +688,117 @@
 
   function renderFeed(alerts, recs) {
     const feed = [];
-    alerts.forEach((a) => {
-      feed.push({
-        kind: "alert",
-        ts: Number(a.timestamp || 0),
-        title: String(a.alertType || "ALERTE"),
-        zone: String(a.zoneId || "-"),
-        inter: String(a.intersectionId || "-"),
-        msg: String(a.message || "")
-      });
-    });
-
-    recs.forEach((r) => {
-      feed.push({
-        kind: "rec",
-        ts: Number(r.timestamp || 0),
-        title: "RECOMMANDATION",
-        zone: String(r.zoneId || "-"),
-        inter: String(r.intersectionId || "-"),
-        msg: String(r.recommendation || "")
-      });
-    });
-
+    alerts.forEach((a) => feed.push({ kind: "alert", ts: Number(a.timestamp || 0), title: String(a.alertType || "ALERTE"), zone: String(a.zoneId || "-"), inter: String(a.intersectionId || "-"), msg: String(a.message || "") }));
+    recs.forEach((r) => feed.push({ kind: "rec", ts: Number(r.timestamp || 0), title: "RECOMMANDATION", zone: String(r.zoneId || "-"), inter: String(r.intersectionId || "-"), msg: String(r.recommendation || "") }));
     feed.sort((a, b) => b.ts - a.ts);
     const slice = feed.slice(0, 10);
-
-    const container = document.getElementById("feedList");
     document.getElementById("feedCount").textContent = slice.length + " elements";
-
+    const container = document.getElementById("feedList");
     if (!slice.length) {
       container.innerHTML = "<div class='feed-sub'>Aucun evenement pour le moment.</div>";
       return;
     }
-
-    container.innerHTML = slice.map((it) => {
-      return (
-        "<div class='feed-item " + it.kind + "'>" +
-          "<div class='feed-top'><strong>" + it.title + "</strong><span>" + fmtTime(it.ts) + "</span></div>" +
-          "<div class='feed-sub'>" + it.zone + " - " + it.inter + "</div>" +
-          "<div class='feed-msg'>" + it.msg + "</div>" +
-        "</div>"
-      );
-    }).join("");
+    container.innerHTML = slice.map((it) => "<div class='feed-item " + it.kind + "'><div class='feed-top'><strong>" + it.title + "</strong><span>" + fmtTime(it.ts) + "</span></div><div class='feed-sub'>" + it.zone + " - " + it.inter + "</div><div class='feed-msg'>" + it.msg + "</div></div>").join("");
   }
 
-  function collectIntersectionIds(alerts, recs, lights) {
-    const ids = [];
-    const seen = new Set();
-
-    function add(v) {
-      const id = String(v || "").trim();
-      if (!id || seen.has(id)) return;
-      seen.add(id);
-      ids.push(id);
-    }
-
-    lights.forEach((l) => add(l.intersectionId));
-    alerts.forEach((a) => add(a.intersectionId));
-    recs.forEach((r) => add(r.intersectionId));
-    return ids.slice(0, 6);
-  }
-
-  function renderSensors(alerts, recs, lights, metrics) {
-    const ids = collectIntersectionIds(alerts, recs, lights);
-    const byIntersection = {};
-
-    alerts.forEach((a) => {
-      const key = String(a.intersectionId || "");
-      if (!byIntersection[key]) byIntersection[key] = { alerts: 0, hasAccident: false };
-      byIntersection[key].alerts += 1;
-      if (String(a.alertType || "") === "ACCIDENT") {
-        byIntersection[key].hasAccident = true;
-      }
-    });
-
-    const lightMap = {};
-    lights.forEach((l) => {
-      lightMap[String(l.intersectionId || "")] = l;
-    });
-
-    const recCount = {};
-    recs.forEach((r) => {
-      const key = String(r.intersectionId || "");
-      recCount[key] = (recCount[key] || 0) + 1;
-    });
-
+  function renderSensors(snapshots) {
     const grid = document.getElementById("sensorGrid");
-
-    if (!ids.length) {
+    if (!snapshots.length) {
       grid.innerHTML = "<div class='panel panel-body'>Aucune intersection disponible.</div>";
       return;
     }
-
-    grid.innerHTML = ids.map((id, idx) => {
-      const light = lightMap[id] || {};
-      const baseGreen = safeInt(light.greenDurationSeconds, 35);
-      const localFlux = clamp(Math.round(metrics.flux * (0.55 + idx * 0.08)), 40, 980);
-      const localPollution = clamp(Math.round(metrics.pollution * (0.72 + idx * 0.06)), 35, 320);
-      const localNoise = clamp(Math.round(metrics.noise * (0.85 + idx * 0.04)), 38, 130);
-      const aInfo = byIntersection[id] || { alerts: 0, hasAccident: false };
-      const cam = aInfo.hasAccident ? "incident" : "active";
-      const color = aInfo.hasAccident ? "#ff5f71" : "#39d08d";
-      const recsForInter = recCount[id] || 0;
-
-      return (
-        "<article class='sensor'>" +
-          "<h4>" + id + "</h4>" +
-          "<p>Flux: <strong style='color:#66c8ff'>" + localFlux + " veh/min</strong></p>" +
-          "<p>Pollution: <strong style='color:#b18cff'>" + localPollution + " AQI</strong></p>" +
-          "<p>Bruit: <strong style='color:#f3ba4a'>" + localNoise + " dB</strong></p>" +
-          "<p>Feu vert: <strong style='color:#77de9f'>" + baseGreen + " s</strong></p>" +
-          "<p>Alertes: <strong style='color:" + color + "'>" + aInfo.alerts + "</strong> | Recs: <strong style='color:#7ad39f'>" + recsForInter + "</strong></p>" +
-          "<span class='status'>Camera " + cam + "</span>" +
-        "</article>"
-      );
+    grid.innerHTML = snapshots.map((snapshot) => {
+      const id = String(snapshot.intersectionId || "-");
+      const route = String(snapshot.routeName || id);
+      const localFlux = clamp(safeInt(snapshot.vehicleCount, 0), 0, 980);
+      const localPollution = clamp(safeInt(snapshot.pm25, 0), 0, 320);
+      const localNoise = clamp(safeInt(snapshot.noiseDb, 0), 0, 130);
+      const baseGreen = clamp(safeInt(snapshot.greenDurationSeconds, 35), 15, 180);
+      const blocked = Boolean(snapshot.roadBlocked);
+      const statusClass = blocked ? "status blocked" : "status";
+      const statusText = blocked ? "Route bloquee" : (snapshot.statusLabel || "Feu actif");
+      return "<article class='sensor'><h4>" + route + "</h4><p>Intersection: <strong>" + id + "</strong></p><p>Flux: <strong style='color:#66c8ff'>" + localFlux + " veh/min</strong></p><p>Pollution: <strong style='color:#b18cff'>" + localPollution + " AQI</strong></p><p>Bruit: <strong style='color:#f3ba4a'>" + localNoise + " dB</strong></p><p>Feu vert: <strong style='color:#77de9f'>" + baseGreen + " s</strong></p><p>Alertes: <strong style='color:#ff7f8c'>" + safeInt(snapshot.recentAlerts, 0) + "</strong> | Recs: <strong style='color:#7ad39f'>" + safeInt(snapshot.recentRecommendations, 0) + "</strong></p><span class='" + statusClass + "'>" + statusText + "</span></article>";
     }).join("");
+  }
+
+  function renderCongestedRoutes(routes) {
+    const container = document.getElementById("congestedRoutes");
+    document.getElementById("congestionCount").textContent = routes.length + " routes";
+    if (!routes.length) {
+      container.innerHTML = "<div class='route-sub'>Aucune route congestionnee actuellement.</div>";
+      return;
+    }
+    container.innerHTML = routes.map((route) => "<div class='route-item'><div class='route-top'><strong>" + (route.routeName || route.intersectionId) + "</strong><span>" + fmtTime(route.timestamp) + "</span></div><div class='route-sub'>" + route.intersectionId + " - " + safeInt(route.vehicleCount, 0) + " veh/min</div><div class='route-msg'>" + (route.message || "") + "</div></div>").join("");
+  }
+
+  function renderZoneStats(stats) {
+    const container = document.getElementById("zoneStats");
+    const entries = [
+      ["Flux moyen", safeInt(stats.avgFlux, 0) + " veh/min"],
+      ["Pollution", safeInt(stats.avgPollution, 0) + " AQI"],
+      ["Bruit", safeInt(stats.avgNoise, 0) + " dB"],
+      ["Alertes actives", safeInt(stats.activeAlerts, 0)],
+      ["Routes bloquees", safeInt(stats.blockedRoutes, 0)],
+      ["Actions executees", safeInt(stats.executedActions, 0)]
+    ];
+    container.innerHTML = entries.map((entry) => "<div class='stat-box'><div class='mini-label'>" + entry[0] + "</div><div class='mini-value'>" + entry[1] + "</div></div>").join("");
+  }
+
+  function renderActions(actions) {
+    const container = document.getElementById("actionFeed");
+    document.getElementById("actionsCount").textContent = actions.length + " actions";
+    if (!actions.length) {
+      container.innerHTML = "<div class='action-sub'>Aucune action executee pour le moment.</div>";
+      return;
+    }
+    container.innerHTML = actions.map((action) => {
+      const css = String(action.status || "").toUpperCase() === "SUCCESS" ? "success" : "failed";
+      return "<div class='action-item " + css + "'><div class='action-top'><strong>" + action.actionName + "</strong><span>" + fmtTime(action.timestamp) + "</span></div><div class='action-sub'>" + (action.transport || "-") + " - " + (action.intersectionId || "-") + "</div><div class='action-msg'>" + (action.details || "") + "</div></div>";
+    }).join("");
+  }
+
+  function initMap() {
+    if (rabatMap) return;
+    rabatMap = L.map("rabatMap", { zoomControl: true }).setView([34.020882, -6.841650], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(rabatMap);
+    vehicleLayer = L.layerGroup().addTo(rabatMap);
+    trafficLightLayer = L.layerGroup().addTo(rabatMap);
+    accidentLayer = L.layerGroup().addTo(rabatMap);
+  }
+
+  function updateMap(mapData) {
+    initMap();
+    vehicleLayer.clearLayers();
+    trafficLightLayer.clearLayers();
+    accidentLayer.clearLayers();
+
+    const vehicles = mapData.vehicles || [];
+    const trafficLights = mapData.trafficLights || [];
+    const accidents = mapData.accidents || [];
+
+    vehicles.forEach((vehicle) => {
+      const icon = L.divIcon({ className: "", html: "<div class='vehicle-dot'></div>", iconSize: [18, 18] });
+      L.marker([vehicle.lat, vehicle.lng], { icon }).bindPopup("<strong>Vehicule simule</strong><br>" + vehicle.routeName + "<br>" + safeInt(vehicle.vehicleCount, 0) + " veh/min").addTo(vehicleLayer);
+    });
+
+    trafficLights.forEach((light) => {
+      const status = String(light.statusLabel || "GREEN").toUpperCase();
+      const css = status === "BLOCKED" ? "light-red" : (status === "AMBER" ? "light-amber" : "light-green");
+      const label = status === "BLOCKED" ? "X" : (status === "AMBER" ? "!" : "G");
+      const icon = L.divIcon({ className: "", html: "<div class='light-icon " + css + "'>" + label + "</div>", iconSize: [24, 24] });
+      L.marker([light.lat, light.lng], { icon }).bindPopup("<strong>" + light.routeName + "</strong><br>Feu: " + light.statusLabel + "<br>Vert: " + safeInt(light.greenDurationSeconds, 0) + " s").addTo(trafficLightLayer);
+    });
+
+    accidents.forEach((accident) => {
+      const icon = L.divIcon({ className: "", html: "<div class='accident-icon'>!</div>", iconSize: [24, 24] });
+      L.marker([accident.lat, accident.lng], { icon }).bindPopup("<strong>Alerte accident</strong><br>" + accident.routeName + (accident.blocked ? "<br>Route bloquee" : "")).addTo(accidentLayer);
+    });
+
+    document.getElementById("mapVehicleCount").textContent = vehicles.length;
+    document.getElementById("mapLightCount").textContent = trafficLights.length;
+    document.getElementById("mapAccidentCount").textContent = accidents.length;
   }
 
   function setClock() {
@@ -871,20 +808,29 @@
 
   async function refreshAll() {
     try {
-      const [overview, alerts, recs, thresholds, lights] = await Promise.all([
-        getJson("/api/dashboard/overview"),
+      const [alerts, recs, thresholds, liveMetrics, snapshots, congestedRoutes, zoneStats, actions, mapData] = await Promise.all([
         getJson("/api/dashboard/alerts?limit=20"),
         getJson("/api/dashboard/recommendations?limit=20"),
         getJson("/api/dashboard/thresholds"),
-        getJson("/api/dashboard/traffic-lights")
+        getJson("/api/dashboard/live-metrics"),
+        getJson("/api/dashboard/intersection-snapshots"),
+        getJson("/api/dashboard/congested-routes"),
+        getJson("/api/dashboard/zone-stats"),
+        getJson("/api/dashboard/actions?limit=10"),
+        getJson("/api/dashboard/map-data")
       ]);
 
-      const metrics = computeDerivedMetrics(overview, alerts, thresholds);
+      const metrics = {
+        flux: clamp(safeInt(liveMetrics.flux, 0), 0, 1200),
+        pollution: clamp(safeInt(liveMetrics.pollution, 0), 0, 400),
+        noise: clamp(safeInt(liveMetrics.noise, 0), 0, 140),
+        activeAlerts: clamp(safeInt(liveMetrics.activeAlerts, 0), 0, 9999)
+      };
 
       document.getElementById("kpiFlux").textContent = safeInt(metrics.flux, 0);
       document.getElementById("kpiPollution").textContent = safeInt(metrics.pollution, 0);
       document.getElementById("kpiNoise").textContent = safeInt(metrics.noise, 0);
-      document.getElementById("kpiAlerts").textContent = safeInt(overview.totalAlerts, 0);
+      document.getElementById("kpiAlerts").textContent = safeInt(metrics.activeAlerts, 0);
 
       document.getElementById("thresholdText").textContent =
         "Seuils actifs: congestion > " + safeInt(thresholds.congestionVehicles, 0) +
@@ -896,16 +842,17 @@
       pushHistory("pollution", metrics.pollution);
       pushHistory("noise", metrics.noise);
       drawHistory();
-
       renderFeed(alerts, recs);
-      renderSensors(alerts, recs, lights, metrics);
+      renderSensors(snapshots);
+      renderCongestedRoutes(congestedRoutes);
+      renderZoneStats(zoneStats);
+      renderActions(actions);
+      updateMap(mapData);
       setClock();
     } catch (err) {
       console.error(err);
       const feed = document.getElementById("feedList");
-      if (feed) {
-        feed.innerHTML = "<div class='feed-sub'>Erreur de chargement des donnees dashboard.</div>";
-      }
+      if (feed) feed.innerHTML = "<div class='feed-sub'>Erreur de chargement des donnees dashboard.</div>";
     }
   }
 
@@ -917,3 +864,4 @@
 </script>
 </body>
 </html>
+

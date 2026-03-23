@@ -1,0 +1,7 @@
+<deployment xmlns="http://xml.apache.org/axis/wsdd/"
+            xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+  <service name="ServiceFeuxSignalisation" provider="java:RPC">
+    <parameter name="className" value="com.smartcity.trafficlight.ServiceFeuxSignalisation"/>
+    <parameter name="allowedMethods" value="extendGreen blockRoad getGreenDurations"/>
+  </service>
+</deployment>

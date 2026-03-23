@@ -1,6 +1,11 @@
 package com.smartcity.common.model;
 
-public class SensorEvent {
+import java.io.Serial;
+import java.io.Serializable;
+
+public class SensorEvent implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     private String zoneId;
     private String intersectionId;
     private SensorType sensorType;

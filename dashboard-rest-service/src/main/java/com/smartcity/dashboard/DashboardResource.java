@@ -3,6 +3,7 @@ package com.smartcity.dashboard;
 import com.smartcity.common.config.Thresholds;
 import com.smartcity.common.model.AlertRecord;
 import com.smartcity.common.model.DashboardOverview;
+import com.smartcity.common.model.ExecutedActionRecord;
 import com.smartcity.common.model.RecommendationRecord;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -41,6 +42,42 @@ public class DashboardResource {
     @Path("/traffic-lights")
     public List<Map<String, Object>> trafficLights() {
         return repository.loadTrafficLights();
+    }
+
+    @GET
+    @Path("/live-metrics")
+    public Map<String, Object> liveMetrics() {
+        return repository.loadLiveMetrics();
+    }
+
+    @GET
+    @Path("/intersection-snapshots")
+    public List<Map<String, Object>> intersectionSnapshots() {
+        return repository.loadIntersectionSnapshots();
+    }
+
+    @GET
+    @Path("/congested-routes")
+    public List<Map<String, Object>> congestedRoutes() {
+        return repository.loadCongestedRoutes();
+    }
+
+    @GET
+    @Path("/zone-stats")
+    public Map<String, Object> zoneStats() {
+        return repository.loadZoneStats();
+    }
+
+    @GET
+    @Path("/actions")
+    public List<ExecutedActionRecord> actions(@DefaultValue("10") @QueryParam("limit") int limit) {
+        return repository.loadExecutedActions(limit);
+    }
+
+    @GET
+    @Path("/map-data")
+    public Map<String, Object> mapData() {
+        return repository.loadMapData();
     }
 
     @GET

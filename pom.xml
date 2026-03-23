@@ -12,11 +12,17 @@
 
   <modules>
     <module>common-model</module>
+    <module>legacy-jaxrpc-client</module>
+    <module>analysis-common</module>
     <module>sensor-simulator-service</module>
     <module>tcp-collector-service</module>
-    <module>analytics-recommendation-service</module>
+    <module>traffic-monitoring-service</module>
+    <module>pollution-monitoring-service</module>
+    <module>noise-monitoring-service</module>
+    <module>accident-monitoring-service</module>
     <module>traffic-light-rmi-service</module>
     <module>integration-soap-service</module>
+    <module>operations-rest-service</module>
     <module>dashboard-rest-service</module>
   </modules>
 
@@ -31,6 +37,7 @@
     <jersey.version>3.1.9</jersey.version>
     <grizzly.version>4.0.2</grizzly.version>
     <jakarta.xml.ws.version>4.0.2</jakarta.xml.ws.version>
+    <jakarta.jws.version>3.0.0</jakarta.jws.version>
     <metro.version>4.0.3</metro.version>
   </properties>
 
@@ -39,6 +46,11 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-jaxb-annotations</artifactId>
         <version>${jackson.version}</version>
       </dependency>
       <dependency>
@@ -82,6 +94,11 @@
         <version>${grizzly.version}</version>
       </dependency>
       <dependency>
+        <groupId>jakarta.jws</groupId>
+        <artifactId>jakarta.jws-api</artifactId>
+        <version>${jakarta.jws.version}</version>
+      </dependency>
+      <dependency>
         <groupId>jakarta.xml.ws</groupId>
         <artifactId>jakarta.xml.ws-api</artifactId>
         <version>${jakarta.xml.ws.version}</version>
@@ -93,6 +110,17 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+    </dependency>
+  </dependencies>
 
   <build>
     <pluginManagement>
